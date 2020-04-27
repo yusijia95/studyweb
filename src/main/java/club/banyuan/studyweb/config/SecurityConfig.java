@@ -6,6 +6,7 @@ import club.banyuan.studyweb.controller.LogoutController;
 import club.banyuan.studyweb.entity.User;
 import club.banyuan.studyweb.service.UserService;
 import club.banyuan.studyweb.service.serviceImpl.UserServiceImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import org.springframework.security.web.authentication.rememberme.InMemoryTokenR
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 @Configuration
@@ -47,6 +49,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+//        auth.userDetailsService(userService).passwordEncoder(new BCryptPasswordEncoder());
         auth.authenticationProvider(new AuthenticationProvider() {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -107,10 +110,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
                 HttpServletRequest request=(HttpServletRequest)servletRequest;
                 HttpServletResponse response=(HttpServletResponse)servletResponse;
+                if(request.getParameter("content")!=null){
+                    request.getSession().setAttribute("content",request.getParameter("content"));
+                }
                 String kaptcha=(String) request.getSession().getAttribute("kaptcha");
                 if(request.getServletPath().equals("/login")){
                     String verifyCode=request.getParameter("verifyCode");
-                    if (verifyCode==null || !verifyCode.equals(kaptcha)){
+                    logger.info("输入验证码：{}",verifyCode);
+                    if (StringUtils.isBlank(verifyCode) || StringUtils.isBlank(kaptcha)|| !verifyCode.equalsIgnoreCase(kaptcha)){
                         System.out.println("-------------");
                         request.setAttribute("verifyCodeError","验证码错误");
                         request.getRequestDispatcher("/loginPage").forward(request,response);

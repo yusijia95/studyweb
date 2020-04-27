@@ -22,4 +22,9 @@ public class DiscussPostServiceImpl implements DiscussPostService {
         PageInfo<DiscussPost> pageInfo=new PageInfo<>(discussPostDao.selectDiscussPosts(userId));
         return pageInfo;
     }
+
+    @Override
+    public DiscussPost selectDiscussPostById(Integer id){
+        return discussPostDao.selectDiscussPostById(id);
+    }
 }

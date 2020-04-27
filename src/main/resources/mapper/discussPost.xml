@@ -16,4 +16,9 @@
         </if>
     </select>
 
+    <select id="selectDiscussPostById" resultType="DiscussPost">
+        select <include refid="selectDiscussPost"></include> from discuss_post
+        where Id=#{Id}
+    </select>
+
 </mapper>

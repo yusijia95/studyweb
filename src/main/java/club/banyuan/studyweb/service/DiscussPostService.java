@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface DiscussPostService {
     PageInfo<DiscussPost> selectDiscussPosts(Integer userId, Integer offset, Integer limit);
+
+    DiscussPost selectDiscussPostById(Integer id);
 }

@@ -20,4 +20,9 @@ class DiscussPostDaoTest {
         List<DiscussPost> list=discussPostDao.selectDiscussPosts(131);
         System.out.println(list);
     }
+
+    @Test
+    void selectDiscussPostById(){
+        System.out.println(discussPostDao.selectDiscussPostById(109));
+    }
 }

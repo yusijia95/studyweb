@@ -1,9 +1,11 @@
 package club.banyuan.studyweb.controller;
 
 import club.banyuan.studyweb.annotation.LoggerAnnotation;
-import club.banyuan.studyweb.config.KaptchaConfig;
+import club.banyuan.studyweb.entity.LoginTicket;
 import club.banyuan.studyweb.entity.User;
+import club.banyuan.studyweb.service.LoginTicketService;
 import club.banyuan.studyweb.service.UserService;
+import club.banyuan.studyweb.util.StudyWebUtil;
 import com.google.code.kaptcha.Producer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +19,12 @@ import org.springframework.security.web.savedrequest.DefaultSavedRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -38,15 +43,28 @@ public class LoginController implements AuthenticationSuccessHandler, Authentica
     @Autowired
     UserService userService;
 
+    @Autowired
+    LoginTicketService loginTicketService;
+
     @LoggerAnnotation
-    @GetMapping("/loginPage")
-    public String loginGet(Model model){
+    @RequestMapping(value = "/loginPage",method = {RequestMethod.GET,RequestMethod.POST})
+    public String loginpage(Model model){
 //        Object object=SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 //        if(object instanceof User){
 //            model.addAttribute("user",object);
 //        }
         return "site/login";
     }
+
+//    @LoggerAnnotation
+//    @RequestMapping(value = "/login",method = {RequestMethod.POST})
+//    public String loginpost(Model model){
+//        Object object=SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//        if(object instanceof User){
+//            model.addAttribute("user",object);
+//        }
+//        return "site/login";
+//    }
 
     @GetMapping("/denied")
     public String deniedGet(){
@@ -59,6 +77,7 @@ public class LoginController implements AuthenticationSuccessHandler, Authentica
         String kaptchaText=kaptchaproducer.createText();
         BufferedImage kaptchaImage=kaptchaproducer.createImage(kaptchaText);
         session.setAttribute("kaptcha",kaptchaText);
+        logger.info("验证码：{}",kaptchaText);
         try {
             response.setContentType("image/png");
             OutputStream output=response.getOutputStream();
@@ -79,6 +98,14 @@ public class LoginController implements AuthenticationSuccessHandler, Authentica
     @Override
     public void onAuthenticationSuccess(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Authentication authentication) throws IOException, ServletException {
         DefaultSavedRequest savedRequest=(DefaultSavedRequest)httpServletRequest.getSession().getAttribute("SPRING_SECURITY_SAVED_REQUEST");
+        User user=(User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        LoginTicket loginTicket=new LoginTicket();
+        loginTicket.setStatus(0);
+        loginTicket.setTicket(StudyWebUtil.generateUUID());
+        loginTicket.setUserId(user.getId());
+        loginTicketService.insertLoginTicket(loginTicket);
+        Cookie cookie=new Cookie("ticket",loginTicket.getTicket());
+        httpServletResponse.addCookie(cookie);
         if(savedRequest!=null){
             String redirectUrl=savedRequest.getRedirectUrl();
             String parameter=savedRequest.getQueryString();
@@ -87,7 +114,7 @@ public class LoginController implements AuthenticationSuccessHandler, Authentica
             }
             httpServletResponse.sendRedirect(redirectUrl);
         }else {
-            httpServletResponse.sendRedirect("/index");
+            httpServletResponse.sendRedirect(httpServletRequest.getContextPath()+"/index");
         }
     }
 }
